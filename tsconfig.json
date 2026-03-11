@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": false,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["esnext", "dom"],
+    "types": ["webpack-env"],
+    "paths": {
+      "@shell/*": ["./node_modules/@rancher/shell/*"],
+      "@pkg/*": ["./pkg/*"]
+    },
+    "baseUrl": "."
+  },
+  "include": [
+    "pkg/**/*.ts",
+    "pkg/**/*.vue"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist-pkg"
+  ]
+}

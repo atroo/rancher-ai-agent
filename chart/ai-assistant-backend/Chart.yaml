@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ai-assistant-backend
+description: AI-powered investigation assistant for Kubernetes workloads (backend)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

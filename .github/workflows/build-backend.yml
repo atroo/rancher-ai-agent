@@ -1,0 +1,48 @@
+name: Build Backend Image
+
+on:
+  workflow_dispatch:
+  release:
+    types: [released]
+  push:
+    tags:
+      - 'backend-*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/ai-assistant-backend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF_NAME" == backend-* ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#backend-}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest

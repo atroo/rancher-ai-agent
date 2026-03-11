@@ -1,0 +1,7 @@
+product:
+  ai-assistant: AI Assistant
+
+ai-assistant:
+  nav:
+    chat: Chat
+    history: History

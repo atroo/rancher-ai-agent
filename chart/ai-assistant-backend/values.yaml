@@ -1,0 +1,47 @@
+image:
+  repository: ghcr.io/atroo/ai-assistant-backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-6
+  apiKeySecretName: ai-assistant-llm-key
+  apiKeySecretKey: api-key
+
+embedding:
+  # OpenAI-compatible embedding API (Voyage AI, OpenAI, Ollama, etc.)
+  baseUrl: https://api.voyageai.com/v1
+  model: voyage-3-lite
+  dimensions: 512
+  # Set apiKeySecretName to enable semantic search for long-term memory
+  apiKeySecretName: ""  # e.g., ai-assistant-embedding-key
+  apiKeySecretKey: api-key
+
+datasources:
+  prometheus:
+    url: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
+  tempo:
+    url: http://tempo-query-frontend.cattle-monitoring-system:3200
+
+service:
+  port: 8080
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""  # use default storage class
+
+rbac:
+  create: true
+
+namespace: cattle-ai-assistant

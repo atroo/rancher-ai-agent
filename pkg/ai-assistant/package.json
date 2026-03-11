@@ -1,0 +1,13 @@
+{
+  "name": "ai-assistant",
+  "version": "0.1.0",
+  "description": "AI-powered investigation assistant for Kubernetes workloads",
+  "rancher": {
+    "annotations": {
+      "catalog.cattle.io/rancher-version": ">= 2.10.0",
+      "catalog.cattle.io/ui-extensions-version": ">= 3.0.0 < 4.0.0",
+      "catalog.cattle.io/display-name": "AI Assistant"
+    }
+  },
+  "main": "index.ts"
+}

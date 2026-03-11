@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-assistant-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: ai-assistant-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: ai-assistant-backend
+  template:
+    metadata:
+      labels:
+        app: ai-assistant-backend
+    spec:
+      serviceAccountName: ai-assistant
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_DIR
+              value: /data
+            - name: LISTEN_ADDR
+              value: ":8080"
+            - name: LLM_PROVIDER
+              value: {{ .Values.llm.provider | quote }}
+            - name: LLM_MODEL
+              value: {{ .Values.llm.model | quote }}
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.llm.apiKeySecretName }}
+                  key: {{ .Values.llm.apiKeySecretKey }}
+            - name: EMBEDDING_BASE_URL
+              value: {{ .Values.embedding.baseUrl | quote }}
+            - name: EMBEDDING_MODEL
+              value: {{ .Values.embedding.model | quote }}
+            - name: EMBEDDING_DIMENSIONS
+              value: {{ .Values.embedding.dimensions | quote }}
+            {{- if .Values.embedding.apiKeySecretName }}
+            - name: EMBEDDING_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.embedding.apiKeySecretName }}
+                  key: {{ .Values.embedding.apiKeySecretKey }}
+            {{- end }}
+            - name: PROMETHEUS_URL
+              value: {{ .Values.datasources.prometheus.url | quote }}
+            - name: TEMPO_URL
+              value: {{ .Values.datasources.tempo.url | quote }}
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: ai-assistant-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
