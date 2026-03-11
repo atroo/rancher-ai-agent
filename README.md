@@ -1,0 +1,187 @@
+# Rancher AI Assistant
+
+An AI-powered investigation assistant for Kubernetes clusters managed by Rancher. It queries Prometheus metrics, Grafana Tempo traces, and the Kubernetes API to help operators diagnose issues — directly from the Rancher UI.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│  Rancher UI                                     │
+│  ┌───────────────────────────────────────────┐  │
+│  │  AI Assistant Extension (Vue 3)           │  │
+│  │  - Chat page, resource tabs, dashboard    │  │
+│  │    card                                   │  │
+│  │  - SSE streaming (Vercel AI SDK protocol) │  │
+│  └──────────────────┬────────────────────────┘  │
+│                     │ /k8s/clusters/<id>/proxy   │
+│  Rancher Server ────┘                           │
+└─────────────────┬───────────────────────────────┘
+                  │ K8s service proxy
+┌─────────────────▼───────────────────────────────┐
+│  Downstream Cluster                             │
+│  ┌───────────────────────────────────────────┐  │
+│  │  ai-assistant-backend (Go)                │  │
+│  │  - Agent loop with tool-use               │  │
+│  │  - Parallel tool execution                │  │
+│  │  - Session persistence (SQLite)           │  │
+│  │  - Long-term memory with embeddings       │  │
+│  │  - Sub-agent spawning                     │  │
+│  └──┬──────────┬──────────┬──────────────────┘  │
+│     │          │          │                     │
+│  Prometheus  Tempo    K8s API                   │
+└─────────────────────────────────────────────────┘
+```
+
+**UI Extension** — Rancher UI Extensions v3 (Vue 3). Adds a chat page, tabs on pod/workload detail pages, and a cluster dashboard health card. Communicates with the backend via SSE through Rancher's K8s service proxy.
+
+**Backend** — Go service deployed in the downstream cluster. Runs an LLM agent loop (Anthropic Claude) with tools for querying Prometheus, Tempo, K8s events/logs/status. Large results are stored in a virtual filesystem (VFS) to keep LLM context lean. Sessions and long-term memory are persisted to SQLite.
+
+**Security** — Read-only RBAC. The backend's ServiceAccount can only `get`, `list`, and `watch` resources. No write operations, no secrets access. Auth is handled by Rancher's proxy layer.
+
+## Features
+
+- **Prometheus queries** — PromQL instant and range queries with automatic summarization
+- **Tempo traces** — TraceQL search and trace-by-ID retrieval
+- **K8s introspection** — Pod logs, events, resource status, workload listing
+- **Virtual filesystem** — Large tool results stored out-of-context with search, pagination, and JSON query tools
+- **Long-term memory** — Stores recurring patterns (errors, performance issues, scaling events) across conversations with optional semantic search via embeddings
+- **Sub-agents** — Spawn focused child agents for deep-dive investigations without cluttering the main conversation
+- **Session persistence** — Conversations survive pod restarts via SQLite
+
+## Prerequisites
+
+- Rancher 2.10+ with UI Extensions v3 enabled
+- RKE2 cluster with kube-prometheus-stack (Rancher Monitoring)
+- Grafana Tempo (optional, for distributed tracing)
+- Anthropic API key
+
+## Deployment
+
+### 1. Backend
+
+Create the namespace and secrets, then deploy with Helm:
+
+```bash
+kubectl create namespace cattle-ai-assistant
+
+# Required: LLM API key
+kubectl -n cattle-ai-assistant create secret generic ai-assistant-llm-key \
+  --from-literal=api-key=<your-anthropic-api-key>
+
+# Optional: Embedding API key (enables semantic search in long-term memory)
+kubectl -n cattle-ai-assistant create secret generic ai-assistant-embedding-key \
+  --from-literal=api-key=<your-voyage-ai-key>
+
+# Deploy
+helm install ai-assistant-backend ./chart/ai-assistant-backend \
+  --namespace cattle-ai-assistant
+```
+
+With embedding support:
+
+```bash
+helm install ai-assistant-backend ./chart/ai-assistant-backend \
+  --namespace cattle-ai-assistant \
+  --set embedding.apiKeySecretName=ai-assistant-embedding-key
+```
+
+### 2. UI Extension
+
+The UI extension is distributed as an OCI catalog image. After creating a GitHub Release, the CI workflow pushes the image to `ghcr.io`.
+
+In Rancher:
+1. Navigate to **Extensions > Manage Repositories > Create**
+2. Select **Container Image** as the type
+3. Enter the catalog image: `ghcr.io/<org>/rancher_ai_assistant/ui-extension-catalog:<version>`
+4. The **AI Assistant** extension appears in the Extensions page — install it
+
+## Helm Values Reference
+
+### Image
+
+| Value | Description | Default |
+|---|---|---|
+| `image.repository` | Backend container image | `ghcr.io/atroo/ai-assistant-backend` |
+| `image.tag` | Image tag | `latest` |
+| `image.pullPolicy` | Pull policy | `IfNotPresent` |
+| `replicaCount` | Number of replicas (only 1 supported due to SQLite) | `1` |
+
+### LLM
+
+| Value | Description | Default |
+|---|---|---|
+| `llm.provider` | LLM provider | `anthropic` |
+| `llm.model` | Model name | `claude-sonnet-4-6` |
+| `llm.apiKeySecretName` | Name of the Secret containing the API key | `ai-assistant-llm-key` |
+| `llm.apiKeySecretKey` | Key within the Secret | `api-key` |
+
+### Embeddings (optional)
+
+Enables semantic search in long-term memory. Works with any OpenAI-compatible embedding API (Voyage AI, OpenAI, Ollama, etc.). If not configured, memory search falls back to text matching.
+
+| Value | Description | Default |
+|---|---|---|
+| `embedding.baseUrl` | Embedding API base URL | `https://api.voyageai.com/v1` |
+| `embedding.model` | Embedding model name | `voyage-3-lite` |
+| `embedding.dimensions` | Vector dimensions | `512` |
+| `embedding.apiKeySecretName` | Secret name (empty = disabled) | `""` |
+| `embedding.apiKeySecretKey` | Key within the Secret | `api-key` |
+
+### Datasources
+
+| Value | Description | Default |
+|---|---|---|
+| `datasources.prometheus.url` | Prometheus URL | `http://rancher-monitoring-prometheus.cattle-monitoring-system:9090` |
+| `datasources.tempo.url` | Tempo query frontend URL | `http://tempo-query-frontend.cattle-monitoring-system:3200` |
+
+### Persistence
+
+| Value | Description | Default |
+|---|---|---|
+| `persistence.enabled` | Enable PVC for SQLite database | `true` |
+| `persistence.size` | PVC size | `1Gi` |
+| `persistence.storageClass` | Storage class (empty = default) | `""` |
+
+### Other
+
+| Value | Description | Default |
+|---|---|---|
+| `service.port` | Service port | `8080` |
+| `resources.requests.memory` | Memory request | `128Mi` |
+| `resources.requests.cpu` | CPU request | `100m` |
+| `resources.limits.memory` | Memory limit | `512Mi` |
+| `rbac.create` | Create ClusterRole and binding | `true` |
+| `namespace` | Target namespace | `cattle-ai-assistant` |
+
+## Development
+
+### Backend
+
+```bash
+cd backend
+go build ./...
+go run ./cmd/server
+```
+
+Requires environment variables: `LLM_API_KEY`, and optionally `PROMETHEUS_URL`, `TEMPO_URL`, `EMBEDDING_API_KEY`.
+
+### UI Extension
+
+Requires Node 20 (see `.nvmrc`).
+
+```bash
+nvm use 20
+npm install
+npm run build-pkg ai-assistant    # production build → dist-pkg/
+```
+
+## CI/CD
+
+| Workflow | Trigger | Output |
+|---|---|---|
+| `build-extension-catalog.yml` | GitHub Release, manual | UI extension OCI image → `ghcr.io` |
+| `build-backend.yml` | GitHub Release, manual, `backend-*` tags | Backend Docker image → `ghcr.io` |
+
+## License
+
+TBD
