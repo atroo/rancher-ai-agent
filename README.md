@@ -73,14 +73,14 @@ kubectl -n cattle-ai-assistant create secret generic ai-assistant-embedding-key 
   --from-literal=api-key=<your-voyage-ai-key>
 
 # Deploy
-helm install ai-assistant-backend ./chart/ai-assistant-backend \
+helm install ai-assistant-backend ./charts/ai-assistant-backend/0.1.0 \
   --namespace cattle-ai-assistant
 ```
 
 With embedding support:
 
 ```bash
-helm install ai-assistant-backend ./chart/ai-assistant-backend \
+helm install ai-assistant-backend ./charts/ai-assistant-backend/0.1.0 \
   --namespace cattle-ai-assistant \
   --set embedding.apiKeySecretName=ai-assistant-embedding-key
 ```
