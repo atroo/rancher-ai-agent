@@ -5,7 +5,8 @@
   "scripts": {
     "build-pkg": "bash node_modules/@rancher/shell/scripts/build-pkg.sh",
     "serve-pkgs": "bash node_modules/@rancher/shell/scripts/serve-pkgs",
-    "publish-pkgs": "bash node_modules/@rancher/shell/scripts/publish-pkg.sh"
+    "publish-pkgs": "bash node_modules/@rancher/shell/scripts/extension/publish",
+    "parse-tag-name": "bash node_modules/@rancher/shell/scripts/extension/parse-tag-name"
   },
   "dependencies": {
     "@rancher/shell": "^3.0.0"
