@@ -1,0 +1,84 @@
+name: Build and Release Extension Charts
+
+on:
+  workflow_dispatch:
+  release:
+    types: [released]
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./
+
+jobs:
+  build-extension-charts:
+    uses: rancher/dashboard/.github/workflows/build-extension-charts.yml@master
+    permissions:
+      actions: write
+      contents: write
+      deployments: write
+      pages: write
+    with:
+      target_branch: gh-pages
+      tagged_release: ${{ github.ref_name }}
+
+  publish-backend-chart:
+    runs-on: ubuntu-latest
+    needs: build-extension-charts
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Determine backend chart version
+        id: chart
+        run: |
+          VERSION=$(grep '^version:' charts/ai-assistant-backend/0.*/Chart.yaml | head -1 | awk '{print $2}')
+          CHART_DIR=$(ls -d charts/ai-assistant-backend/0.* | sort -V | tail -1)
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "CHART_DIR=${CHART_DIR}" >> $GITHUB_OUTPUT
+
+      - name: Package backend chart
+        run: |
+          helm package ${{ steps.chart.outputs.CHART_DIR }} -d /tmp/charts
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Add backend chart to repo
+        run: |
+          # Create assets dir if it doesn't exist
+          mkdir -p gh-pages/assets/ai-assistant-backend
+
+          # Copy the packaged chart
+          cp /tmp/charts/ai-assistant-backend-*.tgz gh-pages/assets/ai-assistant-backend/
+
+          # Rebuild the Helm index, merging with existing
+          if [ -f gh-pages/index.yaml ]; then
+            helm repo index gh-pages/assets/ai-assistant-backend \
+              --url assets/ai-assistant-backend \
+              --merge gh-pages/index.yaml
+            # The merged index is in the assets subdir, move it to root
+            mv gh-pages/assets/ai-assistant-backend/index.yaml gh-pages/index.yaml
+          else
+            helm repo index gh-pages \
+              --url assets/ai-assistant-backend
+          fi
+
+      - name: Push to gh-pages
+        run: |
+          cd gh-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git diff --staged --quiet && echo "No changes" && exit 0
+          git commit -m "Add backend chart ai-assistant-backend-${{ steps.chart.outputs.VERSION }}"
+          git push
