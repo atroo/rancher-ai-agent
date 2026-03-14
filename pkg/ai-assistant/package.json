@@ -9,5 +9,5 @@
       "catalog.cattle.io/display-name": "AI Assistant"
     }
   },
-  "main": "index.ts"
+  "main": "index.js"
 }

@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+// Datasource provider constants.
+const (
+	// Logs
+	LogsProviderKubernetes = "kubernetes" // built-in, no config needed
+
+	// Metrics
+	MetricsProviderPrometheus = "prometheus"
+
+	// Traces
+	TracesProviderTempo = "tempo"
+)
+
 type Config struct {
 	// Server
 	ListenAddr string
@@ -21,9 +33,31 @@ type Config struct {
 	EmbeddingModel      string
 	EmbeddingDimensions int
 
-	// Data sources
+	// Datasources — each category has a provider and provider-specific config.
+	Logs    LogsConfig
+	Metrics MetricsConfig
+	Traces  TracesConfig
+}
+
+// LogsConfig configures the logs datasource.
+type LogsConfig struct {
+	Provider string // "kubernetes" (default, always available)
+}
+
+// MetricsConfig configures the metrics datasource.
+type MetricsConfig struct {
+	Provider string // "prometheus" or "" (disabled)
+
+	// Prometheus-specific
 	PrometheusURL string
-	TempoURL      string
+}
+
+// TracesConfig configures the traces datasource.
+type TracesConfig struct {
+	Provider string // "tempo" or "" (disabled)
+
+	// Tempo-specific
+	TempoURL string
 }
 
 func Load() (*Config, error) {
@@ -36,8 +70,18 @@ func Load() (*Config, error) {
 		EmbeddingAPIKey:     os.Getenv("EMBEDDING_API_KEY"),
 		EmbeddingModel:      envOrDefault("EMBEDDING_MODEL", "voyage-3-lite"),
 		EmbeddingDimensions: envOrDefaultInt("EMBEDDING_DIMENSIONS", 512),
-		PrometheusURL:       envOrDefault("PROMETHEUS_URL", "http://rancher-monitoring-prometheus.cattle-monitoring-system:9090"),
-		TempoURL:            envOrDefault("TEMPO_URL", "http://tempo-query-frontend.cattle-monitoring-system:3200"),
+
+		Logs: LogsConfig{
+			Provider: envOrDefault("LOGS_PROVIDER", LogsProviderKubernetes),
+		},
+		Metrics: MetricsConfig{
+			Provider:      envOrDefault("METRICS_PROVIDER", ""),
+			PrometheusURL: envOrDefault("PROMETHEUS_URL", "http://rancher-monitoring-prometheus.cattle-monitoring-system:9090"),
+		},
+		Traces: TracesConfig{
+			Provider: envOrDefault("TRACES_PROVIDER", ""),
+			TempoURL: envOrDefault("TEMPO_URL", "http://tempo-query-frontend.cattle-monitoring-system:3200"),
+		},
 	}
 
 	if cfg.LLMAPIKey == "" {
@@ -45,6 +89,16 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// MetricsEnabled returns true if a metrics provider is configured.
+func (c *Config) MetricsEnabled() bool {
+	return c.Metrics.Provider != ""
+}
+
+// TracesEnabled returns true if a traces provider is configured.
+func (c *Config) TracesEnabled() bool {
+	return c.Traces.Provider != ""
 }
 
 // RetryBaseDelay returns the base delay for LLM API retries.

@@ -403,6 +403,25 @@ func (s *DB) SemanticSearchMemory(queryVec []float32, category string, namespace
 	return entries, nil
 }
 
+// DeleteMemory removes a memory entry by ID.
+func (s *DB) DeleteMemory(id int) error {
+	result, err := s.db.Exec(`DELETE FROM memory WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return fmt.Errorf("memory entry %d not found", id)
+	}
+	return nil
+}
+
+// UnresolveMemory marks a memory entry as unresolved.
+func (s *DB) UnresolveMemory(id int) error {
+	_, err := s.db.Exec(`UPDATE memory SET resolved = 0 WHERE id = ?`, id)
+	return err
+}
+
 // --- Embedding helpers ---
 
 func encodeEmbedding(vec []float32) string {

@@ -1,0 +1,179 @@
+questions:
+  - variable: llm.apiKeySecretName
+    default: "ai-assistant-llm-key"
+    description: "Name of the Kubernetes Secret containing the LLM API key"
+    type: string
+    required: true
+    label: LLM API Key Secret Name
+    group: "LLM Configuration"
+
+  - variable: llm.apiKeySecretKey
+    default: "api-key"
+    description: "Key within the Secret that holds the API key"
+    type: string
+    required: true
+    label: LLM API Key Secret Key
+    group: "LLM Configuration"
+
+  - variable: llm.provider
+    default: "anthropic"
+    description: "LLM provider"
+    type: enum
+    required: true
+    label: LLM Provider
+    group: "LLM Configuration"
+    options:
+      - "anthropic"
+
+  - variable: llm.model
+    default: "claude-sonnet-4-6"
+    description: "LLM model name"
+    type: string
+    required: true
+    label: LLM Model
+    group: "LLM Configuration"
+
+  - variable: image.repository
+    default: "ghcr.io/atroo/ai-assistant-backend"
+    description: "Backend container image repository"
+    type: string
+    required: true
+    label: Image Repository
+    group: "Image"
+
+  - variable: image.tag
+    default: "latest"
+    description: "Image tag"
+    type: string
+    required: true
+    label: Image Tag
+    group: "Image"
+
+  # --- Datasources ---
+
+  - variable: datasources.logs.provider
+    default: "kubernetes"
+    description: "Logs provider. 'kubernetes' uses the K8s API for container logs (no extra config needed)."
+    type: enum
+    required: true
+    label: Logs Provider
+    group: "Datasources - Logs"
+    options:
+      - "kubernetes"
+
+  - variable: datasources.metrics.provider
+    default: "prometheus"
+    description: "Metrics provider. Set to empty string to disable metrics tools."
+    type: enum
+    required: false
+    label: Metrics Provider
+    group: "Datasources - Metrics"
+    options:
+      - ""
+      - "prometheus"
+
+  - variable: datasources.metrics.prometheus.url
+    default: "http://rancher-monitoring-prometheus.cattle-monitoring-system:9090"
+    description: "Prometheus server URL (from Rancher Monitoring)"
+    type: string
+    required: false
+    label: Prometheus URL
+    group: "Datasources - Metrics"
+    show_if: "datasources.metrics.provider=prometheus"
+
+  - variable: datasources.traces.provider
+    default: ""
+    description: "Traces provider. Set to empty string to disable tracing tools."
+    type: enum
+    required: false
+    label: Traces Provider
+    group: "Datasources - Traces"
+    options:
+      - ""
+      - "tempo"
+
+  - variable: datasources.traces.tempo.url
+    default: "http://tempo-query-frontend.cattle-monitoring-system:3200"
+    description: "Grafana Tempo query frontend URL"
+    type: string
+    required: false
+    label: Tempo URL
+    group: "Datasources - Traces"
+    show_if: "datasources.traces.provider=tempo"
+
+  # --- Embeddings ---
+
+  - variable: embedding.apiKeySecretName
+    default: ""
+    description: "Secret name for embedding API key. Leave empty to disable semantic search."
+    type: string
+    required: false
+    label: Embedding API Key Secret Name
+    group: "Embeddings (Optional)"
+    show_subquestion_if: true
+    subquestions:
+      - variable: embedding.baseUrl
+        default: "https://api.voyageai.com/v1"
+        description: "OpenAI-compatible embedding API base URL"
+        type: string
+        label: Embedding API Base URL
+      - variable: embedding.model
+        default: "voyage-3-lite"
+        description: "Embedding model name"
+        type: string
+        label: Embedding Model
+      - variable: embedding.dimensions
+        default: 512
+        description: "Vector dimensions"
+        type: int
+        label: Embedding Dimensions
+      - variable: embedding.apiKeySecretKey
+        default: "api-key"
+        description: "Key within the Secret"
+        type: string
+        label: Embedding API Key Secret Key
+
+  # --- Storage ---
+
+  - variable: persistence.enabled
+    default: true
+    description: "Enable persistent storage for SQLite database (sessions and memory)"
+    type: boolean
+    required: true
+    label: Enable Persistence
+    group: "Storage"
+    show_subquestion_if: true
+    subquestions:
+      - variable: persistence.size
+        default: "1Gi"
+        description: "PVC size for SQLite database"
+        type: string
+        label: Storage Size
+      - variable: persistence.storageClass
+        default: ""
+        description: "Storage class (empty = cluster default)"
+        type: storageclass
+        label: Storage Class
+
+  # --- Resources ---
+
+  - variable: resources.requests.memory
+    default: "128Mi"
+    description: "Memory request"
+    type: string
+    label: Memory Request
+    group: "Resources"
+
+  - variable: resources.limits.memory
+    default: "512Mi"
+    description: "Memory limit"
+    type: string
+    label: Memory Limit
+    group: "Resources"
+
+  - variable: resources.requests.cpu
+    default: "100m"
+    description: "CPU request"
+    type: string
+    label: CPU Request
+    group: "Resources"

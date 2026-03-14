@@ -62,10 +62,21 @@ spec:
                   name: {{ .Values.embedding.apiKeySecretName }}
                   key: {{ .Values.embedding.apiKeySecretKey }}
             {{- end }}
+            # Datasource providers
+            - name: LOGS_PROVIDER
+              value: {{ .Values.datasources.logs.provider | quote }}
+            - name: METRICS_PROVIDER
+              value: {{ .Values.datasources.metrics.provider | quote }}
+            - name: TRACES_PROVIDER
+              value: {{ .Values.datasources.traces.provider | quote }}
+            {{- if eq .Values.datasources.metrics.provider "prometheus" }}
             - name: PROMETHEUS_URL
-              value: {{ .Values.datasources.prometheus.url | quote }}
+              value: {{ .Values.datasources.metrics.prometheus.url | quote }}
+            {{- end }}
+            {{- if eq .Values.datasources.traces.provider "tempo" }}
             - name: TEMPO_URL
-              value: {{ .Values.datasources.tempo.url | quote }}
+              value: {{ .Values.datasources.traces.tempo.url | quote }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /api/v1/health

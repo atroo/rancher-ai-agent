@@ -1,4 +1,4 @@
-const PRODUCT_NAME = 'ai-assistant';
+const PRODUCT_NAME = 'aiassistant';
 
 const routes = [
   {
@@ -11,6 +11,12 @@ const routes = [
     name:      `c-cluster-${ PRODUCT_NAME }-history`,
     path:      `/c/:cluster/${ PRODUCT_NAME }/history`,
     component: () => import('../pages/history.vue'),
+    meta:      { product: PRODUCT_NAME },
+  },
+  {
+    name:      `c-cluster-${ PRODUCT_NAME }-memory`,
+    path:      `/c/:cluster/${ PRODUCT_NAME }/memory`,
+    component: () => import('../pages/memory.vue'),
     meta:      { product: PRODUCT_NAME },
   },
 ];

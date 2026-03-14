@@ -1,5 +1,5 @@
 export function init($extension, store) {
-  const PRODUCT_NAME = 'ai-assistant';
+  const PRODUCT_NAME = 'aiassistant';
 
   const {
     product,
@@ -22,7 +22,7 @@ export function init($extension, store) {
   // Chat page
   virtualType({
     name:     'chat',
-    labelKey: 'ai-assistant.nav.chat',
+    labelKey: 'aiassistant.nav.chat',
     route:    {
       name:   `c-cluster-${ PRODUCT_NAME }-chat`,
       params: { product: PRODUCT_NAME },
@@ -32,15 +32,26 @@ export function init($extension, store) {
   // History page
   virtualType({
     name:     'history',
-    labelKey: 'ai-assistant.nav.history',
+    labelKey: 'aiassistant.nav.history',
     route:    {
       name:   `c-cluster-${ PRODUCT_NAME }-history`,
       params: { product: PRODUCT_NAME },
     },
   });
 
-  basicType(['chat', 'history']);
+  // Memory management page
+  virtualType({
+    name:     'memory',
+    label:    'Memory',
+    route:    {
+      name:   `c-cluster-${ PRODUCT_NAME }-memory`,
+      params: { product: PRODUCT_NAME },
+    },
+  });
 
-  weightType('chat', 2, true);
-  weightType('history', 1, true);
+  basicType(['chat', 'history', 'memory']);
+
+  weightType('chat', 3, true);
+  weightType('history', 2, true);
+  weightType('memory', 1, true);
 }

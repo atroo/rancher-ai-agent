@@ -9,6 +9,9 @@ export default function(plugin) {
   // Register as a cluster-level product (sidebar entry per cluster)
   plugin.addProduct(require('./product'));
 
+  // Register routes for the product pages
+  plugin.addRoutes(require('./routing/extension-routing').default);
+
   // Global header button — opens the AI chat drawer from any page
   plugin.addAction(ActionLocation.HEADER, {}, {
     tooltip:    'AI Assistant',
@@ -55,5 +58,11 @@ export default function(plugin) {
   );
 
   // Register the chat store module
-  plugin.addStore('ai-assistant-chat', require('./stores/chat').default);
+  const chatStoreModule = require('./stores/chat').default;
+
+  plugin.addStore(
+    'ai-assistant-chat',
+    () => (store) => { store.registerModule('ai-assistant-chat', chatStoreModule); },
+    (store) => { store.unregisterModule('ai-assistant-chat'); }
+  );
 }

@@ -20,11 +20,19 @@ embedding:
   apiKeySecretName: ""  # e.g., ai-assistant-embedding-key
   apiKeySecretKey: api-key
 
+# Datasources — each category has a provider and provider-specific config.
+# Set provider to "" to disable that category.
 datasources:
-  prometheus:
-    url: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
-  tempo:
-    url: http://tempo-query-frontend.cattle-monitoring-system:3200
+  logs:
+    provider: kubernetes  # built-in, uses K8s API (no extra config)
+  metrics:
+    provider: prometheus  # "prometheus" or "" to disable
+    prometheus:
+      url: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
+  traces:
+    provider: ""  # "tempo" or "" to disable
+    tempo:
+      url: http://tempo-query-frontend.cattle-monitoring-system:3200
 
 service:
   port: 8080

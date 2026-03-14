@@ -41,12 +41,17 @@ func main() {
 	defer db.Close()
 	slog.Info("database initialized", "path", dbPath)
 
-	// Initialize data sources
-	sources, err := datasource.NewSources(cfg.PrometheusURL, cfg.TempoURL)
+	// Initialize data sources based on configured providers
+	sources, err := datasource.NewSources(cfg)
 	if err != nil {
 		slog.Error("failed to initialize datasources", "error", err)
 		os.Exit(1)
 	}
+	slog.Info("datasources initialized",
+		"logs", cfg.Logs.Provider,
+		"metrics", cfg.Metrics.Provider,
+		"traces", cfg.Traces.Provider,
+	)
 
 	// Create the LLM provider (Anthropic) with retry
 	provider := anthropicprovider.New(cfg.LLMAPIKey, cfg.LLMModel)
@@ -122,6 +127,9 @@ func main() {
 	mux := http.NewServeMux()
 	handler := api.NewHandler(agentInstance)
 	handler.RegisterRoutes(mux)
+
+	memoryHandler := api.NewMemoryHandler(db)
+	memoryHandler.RegisterRoutes(mux)
 
 	server := &http.Server{
 		Addr:    cfg.ListenAddr,
