@@ -1,0 +1,10 @@
+{
+  "name": "ai-assistant",
+  "version": "0.3.0",
+  "description": "AI-powered investigation assistant for Kubernetes workloads",
+  "rancher": true,
+  "main": "ai-assistant-0.3.0.umd.min.js",
+  "files": [
+    "**/*"
+  ]
+}
