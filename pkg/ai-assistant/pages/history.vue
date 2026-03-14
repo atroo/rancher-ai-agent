@@ -30,14 +30,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent, computed, getCurrentInstance } from 'vue';
 
 export default defineComponent({
   name: 'AiAssistantHistory',
 
   setup() {
-    const store = useStore();
+    const instance = getCurrentInstance();
+    const store = (instance?.proxy as any)?.$store;
 
     const messages = computed(() => store.getters['ai-assistant-chat/allMessages']);
 

@@ -1,6 +1,6 @@
 {
   "name": "ai-assistant-app",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "scripts": {
     "build-pkg": "bash node_modules/@rancher/shell/scripts/build-pkg.sh",
@@ -20,6 +20,9 @@
     "typescript": "~5.3.3"
   },
   "overrides": {
+    "webpack": "5.105.4"
+  },
+  "resolutions": {
     "webpack": "5.105.4"
   },
   "engines": {

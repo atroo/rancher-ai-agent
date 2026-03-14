@@ -96,8 +96,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, nextTick, watch } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent, ref, computed, nextTick, watch, getCurrentInstance } from 'vue';
 import { useRancherContext } from '../composables/useRancherContext';
 import { useAssistantApi } from '../composables/useAssistantApi';
 
@@ -105,7 +104,8 @@ export default defineComponent({
   name: 'AiAssistantPage',
 
   setup() {
-    const store = useStore();
+    const instance = getCurrentInstance();
+    const store = (instance?.proxy as any)?.$store;
     const { clusterId, contextSummary, chatContext } = useRancherContext();
     const { state: streamState, send, abort } = useAssistantApi(clusterId.value);
 
