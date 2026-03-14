@@ -21,4 +21,15 @@ entries:
     urls:
     - assets/ai-assistant/ai-assistant-0.3.0.tgz
     version: 0.3.0
-generated: "2026-03-14T20:47:19.426327816Z"
+  ai-assistant-backend:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-03-14T20:47:41.794081728Z"
+    description: AI-powered investigation assistant for Kubernetes workloads (backend)
+    digest: 7626ad617764c37f30383874a5fa9c5a90c8221114b23c6ae3c89acecb58f7b6
+    name: ai-assistant-backend
+    type: application
+    urls:
+    - assets/ai-assistant-backend/ai-assistant-backend-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-03-14T20:47:41.793275626Z"
