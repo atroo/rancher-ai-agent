@@ -171,16 +171,58 @@ Requires Node 20 (see `.nvmrc`).
 
 ```bash
 nvm use 20
-npm install
-npm run build-pkg ai-assistant    # production build → dist-pkg/
+yarn install
+yarn build-pkg ai-assistant    # production build → dist-pkg/
+yarn dev                       # watch mode + dev server on http://localhost:4500
 ```
+
+To test in Rancher, enable Extension Developer Features in Preferences, then load from `http://localhost:4500/ai-assistant-<version>/ai-assistant-<version>.umd.js`.
 
 ## CI/CD
 
 | Workflow | Trigger | Output |
 |---|---|---|
-| `build-extension-catalog.yml` | GitHub Release, manual | UI extension OCI image → `ghcr.io` |
+| `build-extension-charts.yml` | GitHub Release, manual | UI extension + backend Helm charts → gh-pages |
 | `build-backend.yml` | GitHub Release, manual, `backend-*` tags | Backend Docker image → `ghcr.io` |
+
+## Releasing
+
+### UI Extension
+
+The version must be consistent across two files before creating a release:
+
+| File | Field |
+|---|---|
+| `package.json` (root) | `version` |
+| `pkg/ai-assistant/package.json` | `version` |
+
+Steps:
+
+1. Bump the version in **both** `package.json` files (e.g., `0.4.0`)
+2. Commit and push to `main`
+3. Create a GitHub Release with the tag **`ai-assistant-<version>`** (e.g., `ai-assistant-0.4.0`)
+   - The tag format is `<pkg-folder-name>-<version>` — it must match `pkg/ai-assistant/package.json`
+4. The `build-extension-charts.yml` workflow runs automatically:
+   - Builds the UI extension
+   - Packages it as a Helm chart
+   - Publishes to the `gh-pages` branch
+   - The backend chart is also added to the same Helm index
+5. The chart becomes available at `https://<org>.github.io/<repo>/`
+
+### Backend
+
+1. Optionally bump `charts/ai-assistant-backend/<version>/Chart.yaml` if the chart changed
+2. Create a GitHub Release with the tag **`backend-<version>`** (e.g., `backend-0.2.0`)
+3. The `build-backend.yml` workflow builds and pushes the Docker image to `ghcr.io`
+
+### Adding the Helm Repository in Rancher
+
+After the first successful release, enable GitHub Pages (Settings > Pages > Deploy from `gh-pages` branch). Then in Rancher:
+
+1. Navigate to **Apps > Repositories > Create**
+2. Select **HTTP** as the type
+3. Enter the URL: `https://<org>.github.io/<repo>/`
+4. Both the UI extension and backend charts appear in the catalog
 
 ## License
 
