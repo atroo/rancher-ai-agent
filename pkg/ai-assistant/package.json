@@ -1,6 +1,6 @@
 {
   "name": "ai-assistant",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "AI-powered investigation assistant for Kubernetes workloads",
   "rancher": {
     "annotations": {
