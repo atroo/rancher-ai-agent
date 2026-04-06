@@ -2,6 +2,7 @@ image:
   repository: ghcr.io/atroo/ai-assistant-backend
   tag: latest
   pullPolicy: IfNotPresent
+  pullSecrets: []  # e.g., [{ name: my-registry-secret }]
 
 replicaCount: 1
 
