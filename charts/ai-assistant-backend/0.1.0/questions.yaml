@@ -33,6 +33,14 @@ questions:
     label: LLM Model
     group: "LLM Configuration"
 
+  - variable: image.pullSecrets[0].name
+    default: ""
+    description: "Name of the image pull secret for private registries (leave empty if not needed)"
+    type: secret
+    required: false
+    label: Image Pull Secret
+    group: "Image"
+
   - variable: image.repository
     default: "ghcr.io/atroo/ai-assistant-backend"
     description: "Backend container image repository"
