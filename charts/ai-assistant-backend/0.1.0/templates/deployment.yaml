@@ -16,9 +16,9 @@ spec:
         app: ai-assistant-backend
     spec:
       serviceAccountName: ai-assistant
-      {{- with .Values.image.pullSecrets }}
+      {{- if .Values.image.pullSecretName }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+        - name: {{ .Values.image.pullSecretName }}
       {{- end }}
       securityContext:
         runAsNonRoot: true

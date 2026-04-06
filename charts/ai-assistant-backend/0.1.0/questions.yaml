@@ -33,7 +33,7 @@ questions:
     label: LLM Model
     group: "LLM Configuration"
 
-  - variable: image.pullSecrets[0].name
+  - variable: image.pullSecretName
     default: ""
     description: "Name of the image pull secret for private registries (leave empty if not needed)"
     type: secret
